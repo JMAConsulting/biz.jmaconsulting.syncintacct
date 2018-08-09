@@ -1,0 +1,5 @@
+{
+    "require": {
+        "intacct/intacct-sdk-php": "v2.*"
+    }
+}

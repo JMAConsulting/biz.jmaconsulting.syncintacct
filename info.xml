@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<extension key="biz.jmaconsulting.syncintacct" type="module">
+  <file>syncintacct</file>
+  <name>Sage Intacct Integration Extension</name>
+  <description>FIXME</description>
+  <license>AGPL-3.0</license>
+  <maintainer>
+    <author>Monish Deb</author>
+    <email>everyone@jmaconsulting.biz</email>
+  </maintainer>
+  <urls>
+    <url desc="Main Extension Page">https://github.com/JMAConsulting/biz.jmaconsulting.syncintacct</url>
+    <url desc="Documentation">https://github.com/JMAConsulting/biz.jmaconsulting.syncintacct/blob/master/README.md</url>
+    <url desc="Support">https://github.com/JMAConsulting/biz.jmaconsulting.syncintacct/issues</url>
+    <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
+  </urls>
+  <releaseDate>2018-08-09</releaseDate>
+  <version>1.0</version>
+  <develStage>alpha</develStage>
+  <compatibility>
+    <ver>5.4</ver>
+  </compatibility>
+  <comments>This is a new, undeveloped module</comments>
+  <civix>
+    <namespace>CRM/Syncintacct</namespace>
+  </civix>
+</extension>
