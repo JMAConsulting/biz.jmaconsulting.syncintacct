@@ -5,7 +5,7 @@
   <description>FIXME</description>
   <license>AGPL-3.0</license>
   <maintainer>
-    <author>Monish Deb</author>
+    <author>JMA Consulting</author>
     <email>everyone@jmaconsulting.biz</email>
   </maintainer>
   <urls>
@@ -18,7 +18,7 @@
   <version>1.0</version>
   <develStage>alpha</develStage>
   <compatibility>
-    <ver>5.4</ver>
+    <ver>5.0</ver>
   </compatibility>
   <comments>This is a new, undeveloped module</comments>
   <civix>
