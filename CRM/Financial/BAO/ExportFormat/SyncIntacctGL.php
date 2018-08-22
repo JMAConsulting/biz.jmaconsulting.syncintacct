@@ -37,17 +37,6 @@
 class CRM_Financial_BAO_ExportFormat_SyncIntacctGL extends CRM_Financial_BAO_ExportFormat {
 
   /**
-   * For this phase, we always output these records too so that there isn't data
-   * referenced in the journal entries that isn't defined anywhere.
-   *
-   * Possibly in the future this could be selected by the user.
-   */
-  public static $complementaryTables = array(
-    'ACCNT',
-    'CUST',
-  );
-
-  /**
    * Class constructor.
    */
   public function __construct() {
@@ -70,9 +59,9 @@ class CRM_Financial_BAO_ExportFormat_SyncIntacctGL extends CRM_Financial_BAO_Exp
     civicrm_api3('Batch', 'create', [
       'id' => $batchID,
       'data' => 'Not Synchronized',
-    ])
+    ]);
 
-    return $batchID,
+    return $batchID;
   }
 
   /**
@@ -82,24 +71,8 @@ class CRM_Financial_BAO_ExportFormat_SyncIntacctGL extends CRM_Financial_BAO_Exp
    */
   public function makeExport($export) {
     foreach ($export as $batchID) {
-      CRM_Core_DAO::execute("INSERT IGNORE INTO civicrm_intacct_batches(`batch_id`, `mode`) VALUES ($batchID, 'GL')");
+      CRM_Core_DAO::executeQuery("INSERT IGNORE INTO civicrm_intacct_batches(`batch_id`, `mode`) VALUES ($batchID, 'GL')");
     }
-  }
-
-  /**
-   * @return string
-   */
-  public function getFileExtension() {
-    return 'csv';
-  }
-
-  public function exportACCNT() {
-  }
-
-  public function exportCUST() {
-  }
-
-  public function exportTRANS() {
   }
 
 }

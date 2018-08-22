@@ -5,6 +5,11 @@ require __DIR__ . '/../../vendor/autoload.php';
 use Intacct\ClientConfig;
 use Intacct\OnlineClient;
 use Intacct\Functions\Common\ReadByQuery;
+use Intacct\Functions\AccountsPayable\VendorCreate;
+use Intacct\Functions\Common\Query\QueryString;
+use Intacct\Functions\Traits\CustomFieldsTrait;
+use Intacct\Functions\GeneralLedger\JournalEntryCreate;
+use Intacct\Functions\GeneralLedger\JournalEntryLineCreate;
 
 /**
  * Class to send Moodle API request
@@ -56,11 +61,44 @@ class CRM_Syncintacct_API {
     return self::$_singleton;
   }
 
+  public function createVendors($displayName) {
+    $vendorCreate = new VendorCreate();
+    $vendorCreate->setVendorName($displayName);
+    return $this->sendRequest($vendorCreate);
+  }
+
   /**
    * Function to fetch vendors
    */
-  public function getVendors($searchParams = ['RECORDNO', 'VENDORID', 'NAME']) {
-    return $this->sendRequest('VENDOR', $searchParams);
+  public function getVendors($displayNames, $searchParams = ['RECORDNO', 'VENDORID', 'NAME']) {
+    $queryString = new QueryString(sprintf("NAME IN ('%s')", implode("', '", $displayNames)))
+    $query = new ReadByQuery();
+    $query->setObjectName('VENDOR');
+    $query->setQuery($queryString);
+    $query->setFields($searchParams);
+
+    return $this->sendRequest($query);
+  }
+
+  public function createGLEntry($entry) {
+    $journalLineEntry = new JournalEntryLineCreate();
+    $journalLineEntry->setGlAccountNumber($entry['ACCOUNTNO']);
+    $journalLineEntry->setVendorId($entry['VENDORID']);
+    $journalLineEntry->setTransactionCurrency($entry['CURRENCY']);
+    $journalLineEntry->setTransactionAmount($entry['AMOUNT']);
+    $journalLineEntry->setMemo($entry['description']);
+    $journalLineEntry->setCustomAllocationSplits(CustomFieldsTrait($entry['customfields']));
+    return $journalEntry;
+  }
+
+  public function createGLBatch($GLBatch) {
+    $journalEntry = new JournalEntryCreate();
+    $journalEntry->setJournalSymbol($GLBatch['JOURNAL']);
+    $journalEntry->setPostingDate($GLBatch['BATCH_DATE']);
+    $journalEntry->setDescription($GLBatch['BATCH_TITLE']);
+    $journalEntry->setLines($GLBatch['ENTRIES']);
+
+    return $this->sendRequest($journalEntry);
   }
 
   /**
@@ -71,12 +109,7 @@ class CRM_Syncintacct_API {
    *
    * @return array
    */
-  public function sendRequest($entity, $searchParams) {
-    $query = new ReadByQuery();
-    $query->setObjectName($entity);
-    $query->setPageSize(1);
-    $query->setFields($searchParams);
-
+  public function sendRequest($query) {
     return $this->_client->execute($query)->getResult();
   }
 

@@ -14,7 +14,8 @@ function civicrm_api3_job_processbatchsynctointacct($params) {
   $dao = CRM_Core_DAO::executeQuery('SELECT * FROM civicrm_intacct_batches ORDER BY id ASC');
   while($dao->fetch()) {
     $entityTable = ($dao->mode == 'GL') ? 'civicrm_contribution' : 'civicrm_grant';
-    $transactionDAO = CRM_Syncintacct_Util::fetchTransactionrecords($dao->batch_id, $entityTable);
+    $batchEntries = CRM_Syncintacct_Util::fetchTransactionrecords($dao->batch_id, $entityTable);
+    CRM_Syncintacct_Util::createGLEntries($batchEntries);
   }
 
 }
