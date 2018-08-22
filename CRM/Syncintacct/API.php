@@ -86,8 +86,9 @@ class CRM_Syncintacct_API {
     $journalLineEntry->setVendorId($entry['VENDORID']);
     $journalLineEntry->setTransactionCurrency($entry['CURRENCY']);
     $journalLineEntry->setTransactionAmount($entry['AMOUNT']);
-    $journalLineEntry->setMemo($entry['description']);
-    $journalLineEntry->setCustomAllocationSplits(CustomFieldsTrait($entry['customfields']));
+    $journalLineEntry->setMemo($entry['DESCRIPTION']);
+    $customFields = new CustomFieldsTrait($entry['customfields']);
+    $journalLineEntry->setCustomAllocationSplits($customFields);
     return $journalEntry;
   }
 
