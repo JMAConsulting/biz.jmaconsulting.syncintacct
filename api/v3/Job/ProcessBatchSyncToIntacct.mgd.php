@@ -3,7 +3,7 @@
 return array (
   0 =>
   array (
-    'name' => 'Cron:Job.ProcessBatchSyncToIntacct',
+    'name' => 'Cron:Job.processBatchSyncToIntacct',
     'entity' => 'Job',
     'params' =>
     array (
@@ -12,7 +12,7 @@ return array (
       'description' => 'Create GL or AP entries in Intacct for respective contribution or grant payments.',
       'run_frequency' => 'Daily',
       'api_entity' => 'Job',
-      'api_action' => 'ProcessBatchSyncToIntacct',
+      'api_action' => 'processBatchSyncToIntacct',
       'parameters' => '',
     ),
   ),

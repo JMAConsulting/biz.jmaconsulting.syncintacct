@@ -71,7 +71,7 @@ class CRM_Syncintacct_API {
    * Function to fetch vendors
    */
   public function getVendors($displayNames, $searchParams = ['RECORDNO', 'VENDORID', 'NAME']) {
-    $queryString = new QueryString(sprintf("NAME IN ('%s')", implode("', '", $displayNames)))
+    $queryString = new QueryString(sprintf("NAME IN ('%s')", implode("', '", $displayNames)));
     $query = new ReadByQuery();
     $query->setObjectName('VENDOR');
     $query->setQuery($queryString);

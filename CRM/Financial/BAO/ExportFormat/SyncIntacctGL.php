@@ -75,4 +75,11 @@ class CRM_Financial_BAO_ExportFormat_SyncIntacctGL extends CRM_Financial_BAO_Exp
     }
   }
 
+  /**
+   * @return void
+   */
+  public function getFileExtension() {
+    return NULL;
+  }
+
 }
