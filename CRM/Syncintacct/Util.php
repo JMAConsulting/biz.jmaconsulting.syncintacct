@@ -6,6 +6,21 @@
 class CRM_Syncintacct_Util {
 
 
+  /**
+   * IF the given array of batch IDs consist of any transactions related to grant payment
+   */
+  public static function batchesByEntityTable($batchIDs, $entityTable) {
+      $sql = "SELECT COUNT(eb.batch_id)
+      FROM civicrm_entity_batch eb
+      INNER JOIN civicrm_financial_trxn tx ON tx.id = eb.entity_id AND eb.entity_table = 'civicrm_financial_trxn'
+      INNER JOIN civicrm_entity_financial_trxn eft ON eft.financial_trxn_id = tx.id AND eft.entity_table = '{$entityTable}'
+      INNER JOIN civicrm_batch b ON b.id = eb.batch_id
+      WHERE eb.batch_id IN (" . implode(',', $batchIDs) . ")
+      GROUP BY eb.batch_id";
+      $dao = CRM_Core_DAO::executeQuery($sql);
+       return $dao->N;
+  }
+
   public static function fetchTransactionrecords($batchID, $entityType) {
     $sql = "SELECT
       ft.id as financial_trxn_id,
