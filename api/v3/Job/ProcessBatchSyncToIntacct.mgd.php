@@ -11,7 +11,7 @@ return array (
       'name' => 'Sync Batch to Intacct',
       'description' => 'Create GL or AP entries in Intacct for respective contribution or grant payments.',
       'run_frequency' => 'Daily',
-      'api_entity' => 'Job',
+      'api_entity' => 'Intacct',
       'api_action' => 'processBatchSyncToIntacct',
       'parameters' => '',
     ),

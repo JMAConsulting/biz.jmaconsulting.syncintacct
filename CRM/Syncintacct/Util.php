@@ -82,6 +82,18 @@ class CRM_Syncintacct_Util {
     ];
     while ($dao->fetch()) {
       $GLBatch['ENTRIES'][] = [
+        'ACCOUNTNO' => $dao->credit_account ?: $dao->from_credit_account,
+        'VENDORID' => $dao->display_name,
+        'CURRENCY' => $dao->currency,
+        'AMOUNT' => -$dao->debit_total_amount,
+        'DESCRIPTION' => $dao->item_description,
+        'customfields' => [
+          'batch_id' => $batchID,
+          'financial_trxn_id' => $dao->financial_trxn_id,
+          'financial_item_id' => $dao->financial_item_id,
+        ]
+      ];
+      $GLBatch['ENTRIES'][] = [
         'ACCOUNTNO' => $dao->to_account_code,
         'VENDORID' => $dao->display_name,
         'CURRENCY' => $dao->currency,
@@ -99,22 +111,23 @@ class CRM_Syncintacct_Util {
   }
 
   public static function createGLEntries($batchEntries) {
-    $displayNames = array_flip(CRM_Utils_Array::collect('VENDORID', $batchEntries['ENTRIES']));
     $fetchVendors = CRM_Syncintacct_API::singleton()
-                      ->getVendors($displayNames)
+                      ->getVendors(array_unique(CRM_Utils_Array::collect('VENDORID', $batchEntries['ENTRIES'])))
                       ->getData();
 
+    $displayNames = [];
     foreach ($fetchVendors as $vendor) {
-      $displayNames[$vendor->NAME] = $vendor->VENDORID;
+      $key = (string) $vendor->NAME;
+      $displayNames[$key] = (string) $vendor->VENDORID;
     }
 
-    foreach ($batchEntries['ENTRIES'] as $key => $entry) {
+    foreach ($batchEntries['ENTRIES'] as $key => &$entry) {
       $vendorID = CRM_Utils_Array::value($entry['VENDORID'], $displayNames);
-      if (is_string($vendorID)) {
-        $batchEntries['ENTRIES'][$key]['VENDORID'] = $vendorID;
+      if (strstr($vendorID, 'VEN-')) {
+        $entry['VENDORID'] = $vendorID;
       }
       else {
-        $batchEntries['ENTRIES'][$key]['VENDORID'] = CRM_Syncintacct_API::singleton()->createVendors($entry['VENDORID'])->getData()[0]->VENDORID;
+        $batchEntries['ENTRIES'][$key]['VENDORID'] = (string) CRM_Syncintacct_API::singleton()->createVendors($entry['VENDORID'])->getData()[0]->VENDORID;
       }
       $batchEntries['ENTRIES'][$key] = CRM_Syncintacct_API::singleton()->createGLEntry($entry);
     }

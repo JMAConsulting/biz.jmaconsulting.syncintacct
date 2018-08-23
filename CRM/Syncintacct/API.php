@@ -10,6 +10,8 @@ use Intacct\Functions\Common\Query\QueryString;
 use Intacct\Functions\Traits\CustomFieldsTrait;
 use Intacct\Functions\GeneralLedger\JournalEntryCreate;
 use Intacct\Functions\GeneralLedger\JournalEntryLineCreate;
+use Intacct\Functions\GeneralLedger\CustomAllocationSplit;
+use Intacct\Functions\GeneralLedger\AccountCreate;
 
 /**
  * Class to send Moodle API request
@@ -86,20 +88,43 @@ class CRM_Syncintacct_API {
     $journalLineEntry->setVendorId($entry['VENDORID']);
     $journalLineEntry->setTransactionCurrency($entry['CURRENCY']);
     $journalLineEntry->setTransactionAmount($entry['AMOUNT']);
+    // @TODO this is a dummy active location id passed
+    $journalLineEntry->setLocationId('Elim');
     $journalLineEntry->setMemo($entry['DESCRIPTION']);
-    $customFields = new CustomFieldsTrait($entry['customfields']);
+    $customFields = new CustomAllocationSplit($entry['customfields']);
     $journalLineEntry->setCustomAllocationSplits($customFields);
-    return $journalEntry;
+    return $journalLineEntry;
   }
 
   public function createGLBatch($GLBatch) {
     $journalEntry = new JournalEntryCreate();
-    $journalEntry->setJournalSymbol($GLBatch['JOURNAL']);
+    $journalEntry->setJournalSymbol('AR');
     $journalEntry->setPostingDate($GLBatch['BATCH_DATE']);
     $journalEntry->setDescription($GLBatch['BATCH_TITLE']);
     $journalEntry->setLines($GLBatch['ENTRIES']);
 
     return $this->sendRequest($journalEntry);
+  }
+
+  /**
+   * Function to fetch vendors
+   */
+  public function getGLAccount($FAAccountCode, $searchParams = ['ACCOUNTNO', 'TITLE']) {
+    $queryString = new QueryString("ACCOUNTNO = '{$FAAccountCode}'");
+    $query = new ReadByQuery();
+    $query->setObjectName('GLACCOUNT');
+    $query->setQuery($queryString);
+    $query->setFields($searchParams);
+
+    return $this->sendRequest($query);
+  }
+
+  public function createGLAccount($params) {
+    $accountCreate = new AccountCreate();
+    $accountCreate->setAccountNo($params['accounting_code']);
+    $accountCreate->setTitle($params['name']);
+
+    return $this->sendRequest($accountCreate);
   }
 
   /**
