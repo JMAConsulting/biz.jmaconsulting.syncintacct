@@ -12,6 +12,7 @@ use Intacct\Functions\GeneralLedger\JournalEntryCreate;
 use Intacct\Functions\GeneralLedger\JournalEntryLineCreate;
 use Intacct\Functions\GeneralLedger\CustomAllocationSplit;
 use Intacct\Functions\GeneralLedger\AccountCreate;
+use Intacct\Exception\ResponseException;
 
 /**
  * Class to send Moodle API request
@@ -136,7 +137,24 @@ class CRM_Syncintacct_API {
    * @return array
    */
   public function sendRequest($query) {
-    return $this->_client->execute($query)->getResult();
+    $errorMessage = [];
+    try {
+      return $this->_client->execute($query)->getResult()->getData();
+    } catch (ResponseException $ex) {
+      $errorMessage = [
+        'is_error' => TRUE,
+        get_class($ex) => $ex->getMessage(),
+        'Errors: ' => $ex->getErrors(),
+      ];
+    } catch (\Exception $ex) {
+      $errorMessage = [
+        'is_error' => TRUE,
+        get_class($ex) => $ex->getMessage(),
+      ];
+    }
+
+    return $errorMessage;
+
   }
 
   /**

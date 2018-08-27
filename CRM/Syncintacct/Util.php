@@ -112,10 +112,10 @@ class CRM_Syncintacct_Util {
 
   public static function createGLEntries($batchEntries) {
     $fetchVendors = CRM_Syncintacct_API::singleton()
-                      ->getVendors(array_unique(CRM_Utils_Array::collect('VENDORID', $batchEntries['ENTRIES'])))
-                      ->getData();
+                      ->getVendors(array_unique(CRM_Utils_Array::collect('VENDORID', $batchEntries['ENTRIES'])));
 
     $displayNames = [];
+    $result = '';
     foreach ($fetchVendors as $vendor) {
       $key = (string) $vendor->NAME;
       $displayNames[$key] = (string) $vendor->VENDORID;
@@ -127,13 +127,58 @@ class CRM_Syncintacct_Util {
         $entry['VENDORID'] = $vendorID;
       }
       else {
-        $batchEntries['ENTRIES'][$key]['VENDORID'] = (string) CRM_Syncintacct_API::singleton()->createVendors($entry['VENDORID'])->getData()[0]->VENDORID;
+        $result =  CRM_Syncintacct_API::singleton()->createVendors($entry['VENDORID']);
+        if (!empty($result[0])) {
+          $batchEntries['ENTRIES'][$key]['VENDORID'] = (string) $result[0]->VENDORID;
+        }
       }
       $batchEntries['ENTRIES'][$key] = CRM_Syncintacct_API::singleton()->createGLEntry($entry);
     }
 
-    $response = CRM_Syncintacct_API::singleton()->createGLBatch($batchEntries);
+    return CRM_Syncintacct_API::singleton()->createGLBatch($batchEntries);
+  }
 
+  public static function processSyncIntacctResponse($batchID, $response) {
+    $activity = civicrm_api3('Activity', 'getsingle', [
+      'source_record_id' => $batchID,
+      'status_id' => CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'status_id', 'Scheduled'),
+      'activity_type_id' => CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'activity_type_id', 'Export Accounting Batch'),
+    ]);
+
+    $fileName = CRM_Core_Config::singleton()->uploadDir . 'Financial_Transactions_Response_' . date('YmdHis') . '.txt';
+    $content = sprintf('Batch ID - %d: %s', $batchID, var_export($response, TRUE));
+    file_put_contents($fileName, $content, FILE_APPEND);
+
+    $activityParams = array(
+      'id' => $activity['id'],
+      'attachFile_2' => array(
+        'uri' => $fileName,
+        'type' => 'text/plain',
+        'location' => $fileName,
+        'upload_date' => date('YmdHis'),
+      ),
+    );
+    if (!empty($response['is_error'])) {
+      $email =  Civi::settings()->get('send_error_to_email');
+      if ($email) {
+        $params = [
+          'toEmail' => $email,
+          'subject' => ts('Intacct response error for Batch ID ' . $batchID),
+          'text' => $content,
+          'html' => $content,
+        ];
+        CRM_Utils_Mail::send($params);
+      }
+    }
+    else {
+      $activityParams['status_id'] = CRM_Core_PseudoConstant::getKey('CRM_Activity_BAO_Activity', 'status_id', 'Completed');
+      civicrm_api3('Batch', 'create', [
+        'id' => $batchID,
+        'data' => 'Synchronization completed at ' . date('Y-m-d H:i:s'),
+      ]);
+      CRM_Core_DAO::executeQuery("DELETE FROM civicrm_intacct_batches WHERE batch_id = " . $batchID);
+    }
+    CRM_Activity_BAO_Activity::create($activityParams);
   }
 
 }
