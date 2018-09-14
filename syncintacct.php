@@ -75,54 +75,51 @@ function syncintacct_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
 }
 
 function syncintacct_civicrm_buildForm($formName, &$form) {
-  $optionTypes = array(
-    'IIF' => ts('Export to IIF'),
-    'CSV' => ts('Export to CSV'),
-    'SyncIntacctAP' => ts('Sync to Sage Intacct A/P'),
-    'SyncIntacctGL' => ts('Sync to Sage Intacct G/L'),
-  );
-  if ($formName == 'CRM_Financial_Form_Search') {
-    $htmlOptions = '';
-    foreach ($optionTypes as $key => $optionType) {
-      $htmlOptions .= "<option value='{$key}'>{$optionType}</option>";
-    }
-    $form->assign('htmlOptions', $htmlOptions);
-    CRM_Core_Region::instance('page-body')->add(array(
-      'template' => 'CRM/Syncintacct/FinancialSearch.tpl',
-    ));
-  }
   if ($formName == 'CRM_Financial_Form_Export') {
+    $optionTypes = array(
+      'IIF' => ts('Export to IIF'),
+      'CSV' => ts('Export to CSV'),
+      'SyncIntacctAP' => ts('Sync to Sage Intacct A/P'),
+      'SyncIntacctGL' => ts('Sync to Sage Intacct G/L'),
+    );
     $form->addRadio('export_format', NULL, $optionTypes, NULL, '<br/>', TRUE);
+    if (!empty($_GET['export_format'])) {
+      CRM_Core_Resources::singleton()->addScript(
+        "CRM.$(function($) {
+          $('input[name=\"export_format\"]').filter('[value=" . $_GET['export_format'] . "]').prop('checked', true);
+        });"
+      );
+    }
   }
 }
 
 function syncintacct_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
   if ($formName == 'CRM_Financial_Form_Export') {
-  $exporters = [
-    'SyncIntacctAP' => ts('Sync to Sage Intacct A/P'),
-    'SyncIntacctGL' => ts('Sync to Sage Intacct G/L'),
-  ];
-  if (in_array($fields['export_format'], array_keys($exporters))) {
-    $batchIds = (array) $form->getVar('_batchIds');
-    $grantBatches = CRM_Syncintacct_Util::batchesByEntityTable($batchIds, 'civicrm_grant');
-    $contributionBatches = CRM_Syncintacct_Util::batchesByEntityTable($batchIds, 'civicrm_contribution');
-    if ($grantBatches == 0) {
-      if ($fields['export_format'] == 'SyncIntacctAP') {
-        $errors['export_format'] = ts('Selected batches has no grant payments. Please go back and make sure that selected batches has transactions related to grant payment only, to proceed with "%1" option', [1 => $exporters['SyncIntacctAP']]);
+    $exporters = [
+      'SyncIntacctAP' => ts('Sync to Sage Intacct A/P'),
+      'SyncIntacctGL' => ts('Sync to Sage Intacct G/L'),
+    ];
+    if (in_array($fields['export_format'], array_keys($exporters))) {
+      $batchIds = (array) $form->getVar('_batchIds');
+      $grantBatches = CRM_Syncintacct_Util::batchesByEntityTable($batchIds, 'civicrm_grant');
+      $contributionBatches = CRM_Syncintacct_Util::batchesByEntityTable($batchIds, 'civicrm_contribution');
+      if ($grantBatches == 0) {
+        if ($fields['export_format'] == 'SyncIntacctAP') {
+          $errors['export_format'] = ts('Selected batches has no grant payments. Please go back and make sure that selected batches has transactions related to grant payment only, to proceed with "%1" option', [1 => $exporters['SyncIntacctAP']]);
+        }
       }
-    }
-    elseif ($contributionBatches == 0) {
-      if ($fields['export_format'] == 'SyncIntacctGL') {
-        $errors['export_format'] = ts('Selected batches has no contribution payments. Please go back and make sure that selected batches has transactions related to contributions only, to proceed with "%1" option', [1 => $exporters['SyncIntacctGL']]);
+      elseif ($contributionBatches == 0) {
+        if ($fields['export_format'] == 'SyncIntacctGL') {
+          $errors['export_format'] = ts('Selected batches has no contribution payments. Please go back and make sure that selected batches has transactions related to contributions only, to proceed with "%1" option', [1 => $exporters['SyncIntacctGL']]);
+        }
       }
-    }
-    elseif ($grantBatches != 0 && $contributionBatches != 0) {
-      $errors['export_format'] = ts('Selected batch(es) should only contain transactions related to %1 ', [
-        1 => (($fields['export_format'] == 'SyncIntacctAP') ? 'Grant payment' : 'Contribution'),
-      ]);
+      elseif ($grantBatches != 0 && $contributionBatches != 0) {
+        $errors['export_format'] = ts('Selected batch(es) should only contain transactions related to %1 ', [
+          1 => (($fields['export_format'] == 'SyncIntacctAP') ? 'Grant payment' : 'Contribution'),
+        ]);
+      }
     }
   }
-}
 }
 
 
