@@ -10,6 +10,8 @@ use Intacct\Functions\Common\Query\QueryString;
 use Intacct\Functions\Traits\CustomFieldsTrait;
 use Intacct\Functions\GeneralLedger\JournalEntryCreate;
 use Intacct\Functions\GeneralLedger\JournalEntryLineCreate;
+use Intacct\Functions\AccountsPayable\BillCreate;
+use Intacct\Functions\AccountsPayable\BillLineCreate;
 use Intacct\Functions\GeneralLedger\CustomAllocationSplit;
 use Intacct\Functions\GeneralLedger\AccountCreate;
 use Intacct\Exception\ResponseException;
@@ -105,6 +107,31 @@ class CRM_Syncintacct_API {
     $journalEntry->setLines($GLBatch['ENTRIES']);
 
     return $this->sendRequest($journalEntry);
+  }
+
+  public function createAPBatch($APBatch) {
+    $billEntry = new BillCreate();
+    $billEntry->setVendorId($APBatch['VENDORID']);
+    $billEntry->setTransactionDate($APBatch['TRXN_DATE']);
+    $billEntry->setDescription($APBatch['DESCRIPTION']);
+    $billEntry->setLines($APBatch['ENTRIES']);
+    $billEntry->setDueDate($APBatch['DUE_DATE']);
+    $billEntry->setTransactionCurrency($APBatch['CURRENCY']);
+    $billEntry->getBaseCurrency('USD');
+
+    return $this->sendRequest($billEntry);
+  }
+
+  public function createAPEntry($entry) {
+    $billLineEntry = new BillLineCreate();
+    $billLineEntry->setGlAccountNumber($entry['ACCOUNTNO']);
+    $billLineEntry->setTransactionAmount($entry['AMOUNT']);
+    // @TODO this is a dummy active location id passed
+    $billLineEntry->setLocationId('Elim');
+    // TODO: BillLineCreate does not support adding custom fields yet
+    //  $customFields = new CustomAllocationSplit($entry['customfields']);
+    //  $billLineEntry->setCustomAllocationSplits($customFields);
+    return $billLineEntry;
   }
 
   /**

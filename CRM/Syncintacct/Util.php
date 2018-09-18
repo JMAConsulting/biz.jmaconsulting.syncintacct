@@ -21,7 +21,8 @@ class CRM_Syncintacct_Util {
        return $dao->N;
   }
 
-  public static function fetchTransactionrecords($batchID, $entityType) {
+  public static function createEntries($batchID, $entityType) {
+    $entityTable = ($entityType == 'GL') ? 'civicrm_contribution' : 'civicrm_grant';
     $sql = "SELECT
       ft.id as financial_trxn_id,
       ft.trxn_date,
@@ -51,14 +52,15 @@ class CRM_Syncintacct_Util {
       fac.accounting_code AS from_credit_account,
       fac.name AS from_credit_account_name,
       fi.description AS item_description,
-      fi.id AS financial_item_id
+      fi.id AS financial_item_id,
+      eftc.entity_id AS entity_id
       FROM civicrm_entity_batch eb
       LEFT JOIN civicrm_financial_trxn ft ON (eb.entity_id = ft.id AND eb.entity_table = 'civicrm_financial_trxn')
       LEFT JOIN civicrm_financial_account fa_to ON fa_to.id = ft.to_financial_account_id
       LEFT JOIN civicrm_financial_account fa_from ON fa_from.id = ft.from_financial_account_id
       LEFT JOIN civicrm_option_group cog ON cog.name = 'payment_instrument'
       LEFT JOIN civicrm_option_value cov ON (cov.value = ft.payment_instrument_id AND cov.option_group_id = cog.id)
-      LEFT JOIN civicrm_entity_financial_trxn eftc ON (eftc.financial_trxn_id  = ft.id AND eftc.entity_table = '{$entityType}')
+      LEFT JOIN civicrm_entity_financial_trxn eftc ON (eftc.financial_trxn_id  = ft.id AND eftc.entity_table = '{$entityTable}')
       LEFT JOIN civicrm_contribution c ON c.id = eftc.entity_id
       LEFT JOIN civicrm_contact cc ON cc.id = c.contact_id
       LEFT JOIN civicrm_option_group cog_status ON cog_status.name = 'contribution_status'
@@ -73,6 +75,15 @@ class CRM_Syncintacct_Util {
     $params = array(1 => array($batchID, 'Integer'));
     $dao = CRM_Core_DAO::executeQuery($sql, $params);
 
+    if ($entityType == 'AP') {
+      return self::createAPEntries(self::formatAPBatchParams($dao, $batchID));
+    }
+    else {
+      return self::createGLEntries(self::formatGLBatchParams($dao, $batchID));
+    }
+  }
+
+  public static function formatGLBatchParams($dao, $batchID) {
     $batch = civicrm_api3('Batch', 'getsingle', ['id' => $batchID]);
     $GLBatch = [
       'JOURNAL' => 'CIVIBATCH' . $batchID,
@@ -91,6 +102,7 @@ class CRM_Syncintacct_Util {
           'batch_id' => $batchID,
           'financial_trxn_id' => $dao->financial_trxn_id,
           'financial_item_id' => $dao->financial_item_id,
+          'url' => CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$dao->entity_id}&cid={$dao->contact_id}&action=view"),
         ]
       ];
       $GLBatch['ENTRIES'][] = [
@@ -103,16 +115,85 @@ class CRM_Syncintacct_Util {
           'batch_id' => $batchID,
           'financial_trxn_id' => $dao->financial_trxn_id,
           'financial_item_id' => $dao->financial_item_id,
-        ]
+          'url' => CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$dao->entity_id}&cid={$dao->contact_id}&action=view"),
+        ],
       ];
     }
 
     return $GLBatch;
   }
 
+  public static function formatAPBatchParams($dao, $batchID) {
+    $APBatch = [];
+    while ($dao->fetch()) {
+      $APBatch[$dao->entity_id] = [
+        'CURRENCY' => $dao->currency,
+        'VENDORID' => $dao->display_name,
+        'DESCRIPTION' => $dao->item_description,
+        'TRXN_DATE' => new DateTime($dao->trxn_date),
+        'DUE_DATE' => new DateTime(date('Ymd')),
+        'ENTRIES' => [],
+      ];
+      $APBatch[$dao->entity_id]['ENTRIES'][] = [
+        'ACCOUNTNO' => $dao->credit_account ?: $dao->from_credit_account,
+        'AMOUNT' => -$dao->debit_total_amount,
+        'customfields' => [
+          'batch_id' => $batchID,
+          'financial_trxn_id' => $dao->financial_trxn_id,
+          'financial_item_id' => $dao->financial_item_id,
+          'url' => CRM_Utils_System::url('civicrm/contact/view/grant', "reset=1&id={$dao->entity_id}&cid={$dao->contact_id}&action=view"),
+        ]
+      ];
+      $APBatch[$dao->entity_id]['ENTRIES'][] = [
+        'ACCOUNTNO' => $dao->to_account_code,
+        'AMOUNT' => $dao->debit_total_amount,
+        'DESCRIPTION' => $dao->item_description,
+        'customfields' => [
+          'batch_id' => $batchID,
+          'financial_trxn_id' => $dao->financial_trxn_id,
+          'financial_item_id' => $dao->financial_item_id,
+          'url' => CRM_Utils_System::url('civicrm/contact/view/grant', "reset=1&id={$dao->entity_id}&cid={$dao->contact_id}&action=view"),
+        ],
+      ];
+    }
+
+    return $APBatch;
+  }
+
+  public static function createAPEntries($batchEntries) {
+    $syncIntacctConfig = CRM_Syncintacct_API::singleton();
+    $fetchVendors = $syncIntacctConfig->getVendors(array_unique(CRM_Utils_Array::collect('VENDORID', $batchEntries)));
+    $displayNames = [];
+    $result = '';
+    foreach ($fetchVendors as $vendor) {
+      $key = (string) $vendor->NAME;
+      $displayNames[$key] = (string) $vendor->VENDORID;
+    }
+
+    foreach ($batchEntries as $trxnID => &$entry) {
+      $vendorID = CRM_Utils_Array::value($entry['VENDORID'], $displayNames);
+      if (strstr($vendorID, 'VEN-')) {
+        $entry['VENDORID'] = $vendorID;
+      }
+      else {
+        $result = $syncIntacctConfig->createVendors($entry['VENDORID']);
+        if (!empty($result[0])) {
+          $entry['VENDORID'] = (string) $result[0]->VENDORID;
+        }
+      }
+      foreach ($entry['ENTRIES'] as $key => $trxn) {
+        $entry['ENTRIES'][$key] = $syncIntacctConfig->createAPEntry($trxn);
+      }
+
+      $response['Trxn ID -' . $trxnID] = $syncIntacctConfig->createAPBatch($entry);
+    }
+    CRM_Core_Error::debug_var('a', $response);
+    return $response;
+  }
+
   public static function createGLEntries($batchEntries) {
-    $fetchVendors = CRM_Syncintacct_API::singleton()
-                      ->getVendors(array_unique(CRM_Utils_Array::collect('VENDORID', $batchEntries['ENTRIES'])));
+    $syncIntacctConfig = CRM_Syncintacct_API::singleton();
+    $fetchVendors = $syncIntacctConfig->getVendors(array_unique(CRM_Utils_Array::collect('VENDORID', $batchEntries['ENTRIES'])));
 
     $displayNames = [];
     $result = '';
@@ -127,15 +208,15 @@ class CRM_Syncintacct_Util {
         $entry['VENDORID'] = $vendorID;
       }
       else {
-        $result =  CRM_Syncintacct_API::singleton()->createVendors($entry['VENDORID']);
+        $result = $syncIntacctConfig->createVendors($entry['VENDORID']);
         if (!empty($result[0])) {
           $batchEntries['ENTRIES'][$key]['VENDORID'] = (string) $result[0]->VENDORID;
         }
       }
-      $batchEntries['ENTRIES'][$key] = CRM_Syncintacct_API::singleton()->createGLEntry($entry);
+      $batchEntries['ENTRIES'][$key] = $syncIntacctConfig->createGLEntry($entry);
     }
 
-    return CRM_Syncintacct_API::singleton()->createGLBatch($batchEntries);
+    return $syncIntacctConfig->createGLBatch($batchEntries);
   }
 
   public static function processSyncIntacctResponse($batchID, $response) {

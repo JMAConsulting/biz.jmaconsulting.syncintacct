@@ -83,10 +83,12 @@ function syncintacct_civicrm_buildForm($formName, &$form) {
       'SyncIntacctGL' => ts('Sync to Sage Intacct G/L'),
     );
     $form->addRadio('export_format', NULL, $optionTypes, NULL, '<br/>', TRUE);
-    if (!empty($_GET['export_format'])) {
+    $exportOption = CRM_Utils_Array::value('export_format', $_GET, $form->getVar('export-format'));
+    if ($exportOption) {
+      $form->setVar('export-format', $exportOption);
       CRM_Core_Resources::singleton()->addScript(
         "CRM.$(function($) {
-          $('input[name=\"export_format\"]').filter('[value=" . $_GET['export_format'] . "]').prop('checked', true);
+          $('input[name=\"export_format\"]').filter('[value={$exportOption}]').prop('checked', true);
         });"
       );
     }
@@ -101,6 +103,7 @@ function syncintacct_civicrm_validateForm($formName, &$fields, &$files, &$form, 
     ];
     if (in_array($fields['export_format'], array_keys($exporters))) {
       $batchIds = (array) $form->getVar('_batchIds');
+      $form->setVar('export-format', $fields['export_format']);
       $grantBatches = CRM_Syncintacct_Util::batchesByEntityTable($batchIds, 'civicrm_grant');
       $contributionBatches = CRM_Syncintacct_Util::batchesByEntityTable($batchIds, 'civicrm_contribution');
       if ($grantBatches == 0) {

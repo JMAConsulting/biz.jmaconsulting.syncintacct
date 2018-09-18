@@ -39,10 +39,7 @@ function civicrm_api3_intacct_SyncFinancialAccount($params) {
 function civicrm_api3_intacct_processBatchSyncToIntacct($params) {
   $dao = CRM_Core_DAO::executeQuery('SELECT * FROM civicrm_intacct_batches ORDER BY id ASC');
   while($dao->fetch()) {
-    $entityTable = ($dao->mode == 'GL') ? 'civicrm_contribution' : 'civicrm_grant';
-    $batchEntries = CRM_Syncintacct_Util::fetchTransactionrecords($dao->batch_id, $entityTable);
-    $response = CRM_Syncintacct_Util::createGLEntries($batchEntries);
-    CRM_Core_Error::Debug_var('res', $response);
+    $response = CRM_Syncintacct_Util::createEntries($dao->batch_id, $dao->mode);
     CRM_Syncintacct_Util::processSyncIntacctResponse($dao->batch_id, $response);
   }
 
