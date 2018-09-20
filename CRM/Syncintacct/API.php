@@ -92,7 +92,10 @@ class CRM_Syncintacct_API {
     $journalLineEntry->setTransactionCurrency($entry['CURRENCY']);
     $journalLineEntry->setTransactionAmount($entry['AMOUNT']);
     // @TODO this is a dummy active location id passed
-    $journalLineEntry->setLocationId('Elim');
+    $journalLineEntry->setLocationId($entry['LOCATION']);
+    $journalLineEntry->setDepartmentId($entry['DEPARTMENT']);
+    $journalLineEntry->setProjectId($entry['PROJECTID']);
+    $journalLineEntry->setClassId($entry['CLASSID']);
     $journalLineEntry->setMemo($entry['DESCRIPTION']);
     $customFields = new CustomAllocationSplit($entry['customfields']);
     $journalLineEntry->setCustomAllocationSplits($customFields);
@@ -126,8 +129,10 @@ class CRM_Syncintacct_API {
     $billLineEntry = new BillLineCreate();
     $billLineEntry->setGlAccountNumber($entry['ACCOUNTNO']);
     $billLineEntry->setTransactionAmount($entry['AMOUNT']);
-    // @TODO this is a dummy active location id passed
-    $billLineEntry->setLocationId('Elim');
+    $billLineEntry->setLocationId($entry['LOCATION']);
+    $billLineEntry->setDepartmentId($entry['DEPARTMENT']);
+    $billLineEntry->setProjectId($entry['PROJECTID']);
+    $billLineEntry->setClassId($entry['CLASSID']);
     // TODO: BillLineCreate does not support adding custom fields yet
     //  $customFields = new CustomAllocationSplit($entry['customfields']);
     //  $billLineEntry->setCustomAllocationSplits($customFields);

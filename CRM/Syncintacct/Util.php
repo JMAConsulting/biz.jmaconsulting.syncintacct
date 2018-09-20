@@ -21,7 +21,7 @@ class CRM_Syncintacct_Util {
        return $dao->N;
   }
 
-  public static function createEntries($batchID, $entityType) {
+  public static function fetchEntries($batchID, $entityType) {
     $entityTable = ($entityType == 'GL') ? 'civicrm_contribution' : 'civicrm_grant';
     $sql = "SELECT
       ft.id as financial_trxn_id,
@@ -76,11 +76,20 @@ class CRM_Syncintacct_Util {
     $dao = CRM_Core_DAO::executeQuery($sql, $params);
 
     if ($entityType == 'AP') {
-      return self::createAPEntries(self::formatAPBatchParams($dao, $batchID));
+      return self::formatAPBatchParams($dao, $batchID);
     }
     else {
-      return self::createGLEntries(self::formatGLBatchParams($dao, $batchID));
+      return self::formatGLBatchParams($dao, $batchID);
     }
+  }
+
+
+  public static function getAccountDataByCode($code) {
+    $result = CRM_Core_DAO::executeQuery("
+       SELECT ifad.* FROM civicrm_intacct_financial_account_data ifad
+       INNER JOIN civicrm_financial_account fa ON ifad.financial_account_id = fa.id AND fa.accounting_code = '$code' ")
+       ->fetchAll();
+    return CRM_Utils_Array::value(0, $result);
   }
 
   public static function formatGLBatchParams($dao, $batchID) {
@@ -92,30 +101,41 @@ class CRM_Syncintacct_Util {
       'ENTRIES' => [],
     ];
     while ($dao->fetch()) {
+      $accountCode = $dao->credit_account ?: $dao->from_credit_account;
+      $values = self::getAccountDataByCode($accountCode);
       $GLBatch['ENTRIES'][] = [
-        'ACCOUNTNO' => $dao->credit_account ?: $dao->from_credit_account,
+        'ACCOUNTNO' => $accountCode,
         'VENDORID' => $dao->display_name,
         'CURRENCY' => $dao->currency,
         'AMOUNT' => -$dao->debit_total_amount,
         'DESCRIPTION' => $dao->item_description,
+        'CLASSID' => $values['class_id'],
+        'DEPARTMENT' => $values['dept_id'],
+        'LOCATION' => $values['location'],
+        'PROJECTID' => $values['project_id'],
         'customfields' => [
           'batch_id' => $batchID,
           'financial_trxn_id' => $dao->financial_trxn_id,
           'financial_item_id' => $dao->financial_item_id,
-          'url' => CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$dao->entity_id}&cid={$dao->contact_id}&action=view"),
+          'url' => CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$dao->entity_id}&cid={$dao->contact_id}&action=view", TRUE),
         ]
       ];
+      $values = self::getAccountDataByCode($dao->to_account_code);
       $GLBatch['ENTRIES'][] = [
         'ACCOUNTNO' => $dao->to_account_code,
         'VENDORID' => $dao->display_name,
         'CURRENCY' => $dao->currency,
         'AMOUNT' => $dao->debit_total_amount,
         'DESCRIPTION' => $dao->item_description,
+        'CLASSID' => $values['class_id'],
+        'DEPARTMENT' => $values['dept_id'],
+        'LOCATION' => $values['location'],
+        'PROJECTID' => $values['project_id'],
         'customfields' => [
           'batch_id' => $batchID,
           'financial_trxn_id' => $dao->financial_trxn_id,
           'financial_item_id' => $dao->financial_item_id,
-          'url' => CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$dao->entity_id}&cid={$dao->contact_id}&action=view"),
+          'url' => CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$dao->entity_id}&cid={$dao->contact_id}&action=view", TRUE),
         ],
       ];
     }
@@ -137,27 +157,29 @@ class CRM_Syncintacct_Util {
       $APBatch[$dao->entity_id]['ENTRIES'][] = [
         'ACCOUNTNO' => $dao->credit_account ?: $dao->from_credit_account,
         'AMOUNT' => -$dao->debit_total_amount,
+        'CLASSID' => $dao->from_class,
+        'DEPARTMENT' => $dao->from_dept,
+        'LOCATION' => $dao->from_location,
+        'PROJECTID' => $dao->from_project,
         'customfields' => [
           'batch_id' => $batchID,
           'financial_trxn_id' => $dao->financial_trxn_id,
           'financial_item_id' => $dao->financial_item_id,
-          'url' => CRM_Utils_System::url('civicrm/contact/view/grant', "reset=1&id={$dao->entity_id}&cid={$dao->contact_id}&action=view"),
+          'url' => CRM_Utils_System::url('civicrm/contact/view/grant', "reset=1&id={$dao->entity_id}&cid={$dao->contact_id}&action=view", TRUE),
         ]
-      ];
-      $APBatch[$dao->entity_id]['ENTRIES'][] = [
-        'ACCOUNTNO' => $dao->to_account_code,
-        'AMOUNT' => $dao->debit_total_amount,
-        'DESCRIPTION' => $dao->item_description,
-        'customfields' => [
-          'batch_id' => $batchID,
-          'financial_trxn_id' => $dao->financial_trxn_id,
-          'financial_item_id' => $dao->financial_item_id,
-          'url' => CRM_Utils_System::url('civicrm/contact/view/grant', "reset=1&id={$dao->entity_id}&cid={$dao->contact_id}&action=view"),
-        ],
       ];
     }
 
     return $APBatch;
+  }
+
+  public static function createEntriesByType($batchEntries, $entityType) {
+    if ($entityType == 'AP') {
+      return self::createAPEntries($batchEntries);
+    }
+    else {
+      return self::createGLEntries($batchEntries);
+    }
   }
 
   public static function createAPEntries($batchEntries) {
@@ -187,7 +209,6 @@ class CRM_Syncintacct_Util {
 
       $response['Trxn ID -' . $trxnID] = $syncIntacctConfig->createAPBatch($entry);
     }
-    CRM_Core_Error::debug_var('a', $response);
     return $response;
   }
 

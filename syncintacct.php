@@ -93,7 +93,41 @@ function syncintacct_civicrm_buildForm($formName, &$form) {
       );
     }
   }
+  if ('CRM_Financial_Form_FinancialAccount' == $formName && $form->get('action') & CRM_Core_Action::UPDATE) {
+    $form->add('text', 'class_id', ts('Class'), [], TRUE);
+    $form->add('text', 'dept_id', ts('Department'), [], TRUE);
+    $form->add('text', 'location', ts('Location'), [], TRUE);
+    $form->add('text', 'project_id', ts('Project'), [], TRUE);
+    CRM_Core_Region::instance('page-body')->add(array(
+        'template' => "CRM/Syncintacct/FinancialAccountExtra.tpl",
+    ));
+    $defaults = CRM_Utils_Array::value(0, CRM_Core_DAO::executeQuery(
+      'SELECT * FROM civicrm_intacct_financial_account_data WHERE financial_account_id = ' . $form->get('id'))
+      ->fetchAll(), []);
+    $form->setDefaults($defaults);
+  }
 }
+
+function syncintacct_civicrm_post($op, $objectName, $objectId, &$objectRef) {
+  if ($objectName == 'FinancialAccount' && $op == 'del') {
+    CRM_Core_DAO::executeQuery("DLEETE FROM civicrm_intacct_financial_account_data WHERE financial_account_id = " . $objectId);
+  }
+}
+
+function syncintacct_civicrm_postProcess($formName, &$form) {
+  if ('CRM_Financial_Form_FinancialAccount' == $formName && $form->get('action') & CRM_Core_Action::UPDATE) {
+    $submitValues = $form->exportValues();
+    $values = [];
+    foreach (['class_id', 'dept_id', 'location', 'project_id'] as $column) {
+      if (!empty($submitValues[$column])) {
+        $values[$column] = $submitValues[$column];
+      }
+    }
+    $values['financial_account_id'] = $form->get('id');
+    CRM_Core_DAO::executeQuery(sprintf(' REPLACE INTO civicrm_intacct_financial_account_data(%s) VALUES (\'%s\')', implode(",", array_keys($values)), implode("','", $values)));
+  }
+}
+
 
 function syncintacct_civicrm_validateForm($formName, &$fields, &$files, &$form, &$errors) {
   if ($formName == 'CRM_Financial_Form_Export') {

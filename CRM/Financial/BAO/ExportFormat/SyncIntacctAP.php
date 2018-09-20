@@ -74,7 +74,7 @@ class CRM_Financial_BAO_ExportFormat_SyncIntacctAP extends CRM_Financial_BAO_Exp
     foreach ($export as $batchID) {
       $this->_batchIds = $batchID;
       CRM_Core_DAO::executeQuery("INSERT IGNORE INTO civicrm_intacct_batches(`batch_id`, `mode`) VALUES ($batchID, 'AP')");
-      $batchEntries[$batchID] = CRM_Syncintacct_Util::fetchTransactionrecords($batchID, 'civicrm_contribution');
+      $batchEntries[$batchID] = CRM_Syncintacct_Util::fetchEntries($batchID, 'AP');
     }
 
     // Save the file in the public directory.
