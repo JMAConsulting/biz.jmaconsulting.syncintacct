@@ -100,6 +100,7 @@ class CRM_Syncintacct_Util {
       'BATCH_TITLE' => $batch['title'],
       'ENTRIES' => [],
     ];
+    $queryResults = [];
     while ($dao->fetch()) {
       $accountCode = $dao->credit_account ?: $dao->from_credit_account;
       $values = self::getAccountDataByCode($accountCode);
@@ -138,7 +139,10 @@ class CRM_Syncintacct_Util {
           'url' => CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$dao->entity_id}&cid={$dao->contact_id}&action=view", TRUE),
         ],
       ];
+      $queryResults[] = get_object_vars($dao);
     }
+
+    CRM_Utils_Hook::batchItems($queryResults, $GLBatch);
 
     return $GLBatch;
   }
