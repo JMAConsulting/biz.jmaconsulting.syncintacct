@@ -92,7 +92,7 @@ class CRM_Syncintacct_API {
     $journalLineEntry->setTransactionCurrency($entry['CURRENCY']);
     $journalLineEntry->setTransactionAmount($entry['AMOUNT']);
     // @TODO this is a dummy active location id passed
-    $journalLineEntry->setLocationId(CRM_Utils_Array::value('LOCATION', $entry, 'Elim'));
+    $journalLineEntry->setLocationId('Elim');
     //$journalLineEntry->setLocationId($entry['LOCATION']);
     $this->_setMetaData($journalLineEntry, $entry);
     $journalLineEntry->setMemo($entry['DESCRIPTION']);
@@ -129,7 +129,7 @@ class CRM_Syncintacct_API {
     $billLineEntry->setGlAccountNumber($entry['ACCOUNTNO']);
     $billLineEntry->setTransactionAmount($entry['AMOUNT']);
     //$billLineEntry->setLocationId($entry['LOCATION']);
-    $billLineEntry->setLocationId(CRM_Utils_Array::value('LOCATION', $entry, 'Elim'));
+    $billLineEntry->setLocationId('Elim');
     $this->_setMetaData($billLineEntry, $entry);
     // TODO: BillLineCreate does not support adding custom fields yet
     //  $customFields = new CustomAllocationSplit($entry['customfields']);

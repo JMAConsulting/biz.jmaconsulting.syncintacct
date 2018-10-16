@@ -213,7 +213,7 @@ class CRM_Syncintacct_Util {
         $entry['ENTRIES'][$key] = $syncIntacctConfig->createAPEntry($trxn);
       }
 
-      $response['Trxn ID -' . $trxnID] = $syncIntacctConfig->createAPBatch($entry);
+      $response = $syncIntacctConfig->createAPBatch($entry);
     }
     return $response;
   }
