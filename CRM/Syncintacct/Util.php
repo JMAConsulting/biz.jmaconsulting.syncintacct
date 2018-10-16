@@ -158,13 +158,15 @@ class CRM_Syncintacct_Util {
         'DUE_DATE' => new DateTime(date('Ymd')),
         'ENTRIES' => [],
       ];
+      $accountCode = $dao->credit_account ?: $dao->from_credit_account;
+      $values = self::getAccountDataByCode($accountCode);
       $APBatch[$dao->entity_id]['ENTRIES'][] = [
-        'ACCOUNTNO' => $dao->credit_account ?: $dao->from_credit_account,
+        'ACCOUNTNO' => $accountCode,
         'AMOUNT' => -$dao->debit_total_amount,
-        'CLASSID' => $dao->from_class,
-        'DEPARTMENT' => $dao->from_dept,
-        'LOCATION' => $dao->from_location,
-        'PROJECTID' => $dao->from_project,
+        'CLASSID' => $values['class_id'],
+        'DEPARTMENT' => $values['dept_id'],
+        'LOCATION' => $values['location'],
+        'PROJECTID' => $values['project_id'],
         'customfields' => [
           'batch_id' => $batchID,
           'financial_trxn_id' => $dao->financial_trxn_id,
