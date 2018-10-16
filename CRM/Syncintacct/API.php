@@ -92,10 +92,9 @@ class CRM_Syncintacct_API {
     $journalLineEntry->setTransactionCurrency($entry['CURRENCY']);
     $journalLineEntry->setTransactionAmount($entry['AMOUNT']);
     // @TODO this is a dummy active location id passed
-    $journalLineEntry->setLocationId($entry['LOCATION']);
-    $journalLineEntry->setDepartmentId($entry['DEPARTMENT']);
-    $journalLineEntry->setProjectId($entry['PROJECTID']);
-    $journalLineEntry->setClassId($entry['CLASSID']);
+    $journalLineEntry->setLocationId(CRM_Utils_Array::value('LOCATION', $entry, 'Elim'));
+    //$journalLineEntry->setLocationId($entry['LOCATION']);
+    $this->_setMetaData($journalLineEntry, $entry);
     $journalLineEntry->setMemo($entry['DESCRIPTION']);
     $customFields = new CustomAllocationSplit($entry['customfields']);
     $journalLineEntry->setCustomAllocationSplits($customFields);
@@ -129,14 +128,26 @@ class CRM_Syncintacct_API {
     $billLineEntry = new BillLineCreate();
     $billLineEntry->setGlAccountNumber($entry['ACCOUNTNO']);
     $billLineEntry->setTransactionAmount($entry['AMOUNT']);
-    $billLineEntry->setLocationId($entry['LOCATION']);
-    $billLineEntry->setDepartmentId($entry['DEPARTMENT']);
-    $billLineEntry->setProjectId($entry['PROJECTID']);
-    $billLineEntry->setClassId($entry['CLASSID']);
+    //$billLineEntry->setLocationId($entry['LOCATION']);
+    $billLineEntry->setLocationId(CRM_Utils_Array::value('LOCATION', $entry, 'Elim'));
+    $this->_setMetaData($billLineEntry, $entry);
     // TODO: BillLineCreate does not support adding custom fields yet
     //  $customFields = new CustomAllocationSplit($entry['customfields']);
     //  $billLineEntry->setCustomAllocationSplits($customFields);
     return $billLineEntry;
+  }
+
+  public function _setMetaData(&$entry, $params) {
+    $attributes = [
+      'DEPARTMENT' => 'setDepartmentId',
+      'PROJECTID' => 'setProjectId',
+      'CLASSID' => 'setClassId',
+    ];
+    foreach ($attributes as $attribute => $func) {
+      if (!empty($params[$attribute])) {
+        $entry->$func($params[$attribute]);
+      }
+    }
   }
 
   /**
