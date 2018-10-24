@@ -106,6 +106,7 @@ class CRM_Syncintacct_API {
     $journalEntry->setJournalSymbol('AR');
     $journalEntry->setPostingDate($GLBatch['BATCH_DATE']);
     $journalEntry->setDescription($GLBatch['BATCH_TITLE']);
+    $journalEntry->setAction('Draft');
     $journalEntry->setLines($GLBatch['ENTRIES']);
 
     return $this->sendRequest($journalEntry);
@@ -120,6 +121,7 @@ class CRM_Syncintacct_API {
     $billEntry->setDueDate($APBatch['DUE_DATE']);
     $billEntry->setTransactionCurrency($APBatch['CURRENCY']);
     $billEntry->getBaseCurrency('USD');
+    $billEntry->setAction('Draft');
 
     return $this->sendRequest($billEntry);
   }
