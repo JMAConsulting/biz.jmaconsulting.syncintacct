@@ -17,9 +17,8 @@ class CRM_Syncintacct_Form_Setting extends CRM_Core_Form {
    if (!CRM_Core_Permission::check('administer CiviCRM')) {
      CRM_Core_Error::fatal(ts('You do not permission to access this page, please contact your system administrator.'));
    }
-   $this->_credential = array_merge(
-     Civi::settings()->get('intacct_credential'), ['send_error_to_email' => Civi::settings()->get('send_error_to_email')]
-   );
+   $this->_credential = (array) Civi::settings()->get('intacct_credential');
+   $this->_credential = array_merge($this->_credential, ['send_error_to_email' => Civi::settings()->get('send_error_to_email')]);
 
  }
  /**
