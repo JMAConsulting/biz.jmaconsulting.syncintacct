@@ -103,7 +103,7 @@ class CRM_Syncintacct_API {
 
   public function createGLBatch($GLBatch) {
     $journalEntry = new JournalEntryCreate();
-    $journalEntry->setJournalSymbol('AR');
+    $journalEntry->setJournalSymbol('GJ');
     $journalEntry->setPostingDate($GLBatch['BATCH_DATE']);
     $journalEntry->setDescription($GLBatch['BATCH_TITLE']);
     $journalEntry->setAction('Draft');

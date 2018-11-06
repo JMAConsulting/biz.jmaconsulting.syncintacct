@@ -35,6 +35,7 @@ class CRM_Syncintacct_Util {
       ft.check_number,
       c.source AS source,
       c.id AS contribution_id,
+      c.total_amount AS contribution_amount,
       c.contact_id AS contact_id,
       cc.display_name,
       eb.batch_id AS batch_id,
@@ -70,7 +71,6 @@ class CRM_Syncintacct_Util {
       LEFT JOIN civicrm_financial_account fac ON fac.id = fi.financial_account_id
       LEFT JOIN civicrm_financial_account fa ON fa.id = fi.financial_account_id
       WHERE eb.batch_id = ( %1 )";
-
 
     $params = array(1 => array($batchID, 'Integer'));
     $dao = CRM_Core_DAO::executeQuery($sql, $params);
@@ -112,6 +112,7 @@ class CRM_Syncintacct_Util {
         'DESCRIPTION' => $dao->item_description,
         'CLASSID' => $values['class_id'],
         'DEPARTMENT' => $values['dept_id'],
+        'CONTRIBUTION_AMOUNT' => $dao->contribution_amount,
         'LOCATION' => $values['location'],
         'PROJECTID' => $values['project_id'],
         'customfields' => [
@@ -132,6 +133,7 @@ class CRM_Syncintacct_Util {
         'DEPARTMENT' => $values['dept_id'],
         'LOCATION' => $values['location'],
         'PROJECTID' => $values['project_id'],
+        'CONTRIBUTION_AMOUNT' => $dao->contribution_amount,
         'customfields' => [
           'batch_id' => $batchID,
           'financial_trxn_id' => $dao->financial_trxn_id,
