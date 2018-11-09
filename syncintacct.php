@@ -97,7 +97,7 @@ function syncintacct_civicrm_buildForm($formName, &$form) {
     $form->add('text', 'class_id', ts('Class'), [], TRUE);
     $form->add('text', 'dept_id', ts('Department'), [], TRUE);
     $form->add('text', 'location', ts('Location'), [], TRUE);
-    $form->add('text', 'project_id', ts('Project'), [], TRUE);
+    $form->add('text', 'project_id', ts('Project'));
     CRM_Core_Region::instance('page-body')->add(array(
         'template' => "CRM/Syncintacct/FinancialAccountExtra.tpl",
     ));
@@ -111,6 +111,9 @@ function syncintacct_civicrm_buildForm($formName, &$form) {
 function syncintacct_civicrm_post($op, $objectName, $objectId, &$objectRef) {
   if ($objectName == 'FinancialAccount' && $op == 'del') {
     CRM_Core_DAO::executeQuery("DLEETE FROM civicrm_intacct_financial_account_data WHERE financial_account_id = " . $objectId);
+  }
+  elseif ($objectName == 'Batch' && $op == 'delete') {
+    CRM_Core_DAO::executeQuery("DLEETE FROM civicrm_intacct_batches WHERE batch_id = " . $objectId);
   }
 }
 

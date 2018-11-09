@@ -91,9 +91,6 @@ class CRM_Syncintacct_API {
     $journalLineEntry->setVendorId($entry['VENDORID']);
     $journalLineEntry->setTransactionCurrency($entry['CURRENCY']);
     $journalLineEntry->setTransactionAmount($entry['AMOUNT']);
-    // @TODO this is a dummy active location id passed
-    $journalLineEntry->setLocationId('Elim');
-    //$journalLineEntry->setLocationId($entry['LOCATION']);
     $this->_setMetaData($journalLineEntry, $entry);
     $journalLineEntry->setMemo($entry['DESCRIPTION']);
     $customFields = new CustomAllocationSplit($entry['customfields']);
@@ -130,8 +127,6 @@ class CRM_Syncintacct_API {
     $billLineEntry = new BillLineCreate();
     $billLineEntry->setGlAccountNumber($entry['ACCOUNTNO']);
     $billLineEntry->setTransactionAmount($entry['AMOUNT']);
-    //$billLineEntry->setLocationId($entry['LOCATION']);
-    $billLineEntry->setLocationId('Elim');
     $this->_setMetaData($billLineEntry, $entry);
     // TODO: BillLineCreate does not support adding custom fields yet
     //  $customFields = new CustomAllocationSplit($entry['customfields']);
@@ -144,6 +139,7 @@ class CRM_Syncintacct_API {
       'DEPARTMENT' => 'setDepartmentId',
       'PROJECTID' => 'setProjectId',
       'CLASSID' => 'setClassId',
+      'LOCATION' => 'setLocationId',
     ];
     foreach ($attributes as $attribute => $func) {
       if (!empty($params[$attribute])) {

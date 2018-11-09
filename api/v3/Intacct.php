@@ -37,7 +37,10 @@ function civicrm_api3_intacct_SyncFinancialAccount($params) {
  * @throws API_Exception
  */
 function civicrm_api3_intacct_processBatchSyncToIntacct($params) {
-  $dao = CRM_Core_DAO::executeQuery('SELECT * FROM civicrm_intacct_batches ORDER BY id ASC');
+  $dao = CRM_Core_DAO::executeQuery('SELECT cib.*
+    FROM civicrm_intacct_batches cib
+     INNER JOIN civicrm_batch cb ON cb.id = cib.batch_id
+   ORDER BY cib.id ASC');
   while($dao->fetch()) {
     $response = CRM_Syncintacct_Util::createEntriesByType(
       CRM_Syncintacct_Util::fetchEntries($dao->batch_id, $dao->mode),
