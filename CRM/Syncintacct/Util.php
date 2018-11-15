@@ -103,13 +103,13 @@ class CRM_Syncintacct_Util {
     $queryResults = [];
     while ($dao->fetch()) {
       $accountCode = $dao->credit_account ?: $dao->from_credit_account;
+      $accountName = $dao->credit_account ? $dao->credit_account_name : $dao->from_credit_account_name;
       $values = self::getAccountDataByCode($accountCode);
       $GLBatch['ENTRIES'][] = [
         'ACCOUNTNO' => $accountCode,
-        'VENDORID' => $dao->display_name,
         'CURRENCY' => $dao->currency,
         'AMOUNT' => -$dao->debit_total_amount,
-        'DESCRIPTION' => $dao->item_description,
+        'DESCRIPTION' => $dao->display_name . '-' . $accountName,
         'CLASSID' => $values['class_id'],
         'DEPARTMENT' => $values['dept_id'],
         'CONTRIBUTION_AMOUNT' => $dao->contribution_amount,
@@ -125,10 +125,9 @@ class CRM_Syncintacct_Util {
       $values = self::getAccountDataByCode($dao->to_account_code);
       $GLBatch['ENTRIES'][] = [
         'ACCOUNTNO' => $dao->to_account_code,
-        'VENDORID' => $dao->display_name,
         'CURRENCY' => $dao->currency,
         'AMOUNT' => $dao->debit_total_amount,
-        'DESCRIPTION' => $dao->item_description,
+        'DESCRIPTION' => $dao->display_name . '-' . $dao->to_account_name,
         'CLASSID' => $values['class_id'],
         'DEPARTMENT' => $values['dept_id'],
         'LOCATION' => $values['location'],
@@ -161,10 +160,12 @@ class CRM_Syncintacct_Util {
         'ENTRIES' => [],
       ];
       $accountCode = $dao->credit_account ?: $dao->from_credit_account;
+      $accountName = $dao->credit_account ? $dao->credit_account_name : $dao->from_credit_account_name;
       $values = self::getAccountDataByCode($accountCode);
       $APBatch[$dao->entity_id]['ENTRIES'][] = [
         'ACCOUNTNO' => $accountCode,
         'AMOUNT' => -$dao->debit_total_amount,
+        'MEMO' => $dao->display_name . '-' . $accountName,
         'CLASSID' => $values['class_id'],
         'DEPARTMENT' => $values['dept_id'],
         'LOCATION' => $values['location'],
@@ -221,31 +222,7 @@ class CRM_Syncintacct_Util {
   }
 
   public static function createGLEntries($batchEntries) {
-    $syncIntacctConfig = CRM_Syncintacct_API::singleton();
-    $fetchVendors = $syncIntacctConfig->getVendors(array_unique(CRM_Utils_Array::collect('VENDORID', $batchEntries['ENTRIES'])));
-
-    $displayNames = [];
-    $result = '';
-    foreach ($fetchVendors as $vendor) {
-      $key = (string) $vendor->NAME;
-      $displayNames[$key] = (string) $vendor->VENDORID;
-    }
-
-    foreach ($batchEntries['ENTRIES'] as $key => &$entry) {
-      $vendorID = CRM_Utils_Array::value($entry['VENDORID'], $displayNames);
-      if (strstr($vendorID, 'VEN-')) {
-        $entry['VENDORID'] = $vendorID;
-      }
-      else {
-        $result = $syncIntacctConfig->createVendors($entry['VENDORID']);
-        if (!empty($result[0])) {
-          $batchEntries['ENTRIES'][$key]['VENDORID'] = (string) $result[0]->VENDORID;
-        }
-      }
-      $batchEntries['ENTRIES'][$key] = $syncIntacctConfig->createGLEntry($entry);
-    }
-
-    return $syncIntacctConfig->createGLBatch($batchEntries);
+    return CRM_Syncintacct_API::singleton()->createGLBatch($batchEntries);
   }
 
   public static function processSyncIntacctResponse($batchID, $response) {

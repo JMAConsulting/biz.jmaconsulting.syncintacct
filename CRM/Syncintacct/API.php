@@ -88,7 +88,6 @@ class CRM_Syncintacct_API {
   public function createGLEntry($entry) {
     $journalLineEntry = new JournalEntryLineCreate();
     $journalLineEntry->setGlAccountNumber($entry['ACCOUNTNO']);
-    $journalLineEntry->setVendorId($entry['VENDORID']);
     $journalLineEntry->setTransactionCurrency($entry['CURRENCY']);
     $journalLineEntry->setTransactionAmount($entry['AMOUNT']);
     $this->_setMetaData($journalLineEntry, $entry);
@@ -127,6 +126,7 @@ class CRM_Syncintacct_API {
     $billLineEntry = new BillLineCreate();
     $billLineEntry->setGlAccountNumber($entry['ACCOUNTNO']);
     $billLineEntry->setTransactionAmount($entry['AMOUNT']);
+    $billLineEntry->setMemo($entry['MEMO']);
     $this->_setMetaData($billLineEntry, $entry);
     // TODO: BillLineCreate does not support adding custom fields yet
     //  $customFields = new CustomAllocationSplit($entry['customfields']);
