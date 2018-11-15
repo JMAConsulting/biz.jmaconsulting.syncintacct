@@ -110,10 +110,10 @@ function syncintacct_civicrm_buildForm($formName, &$form) {
 
 function syncintacct_civicrm_post($op, $objectName, $objectId, &$objectRef) {
   if ($objectName == 'FinancialAccount' && $op == 'del') {
-    CRM_Core_DAO::executeQuery("DLEETE FROM civicrm_intacct_financial_account_data WHERE financial_account_id = " . $objectId);
+    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_intacct_financial_account_data WHERE financial_account_id = " . $objectId);
   }
   elseif ($objectName == 'Batch' && $op == 'delete') {
-    CRM_Core_DAO::executeQuery("DLEETE FROM civicrm_intacct_batches WHERE batch_id = " . $objectId);
+    CRM_Core_DAO::executeQuery("DELETE FROM civicrm_intacct_batches WHERE batch_id = " . $objectId);
   }
 }
 

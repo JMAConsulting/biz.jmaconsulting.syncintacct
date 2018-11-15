@@ -222,6 +222,10 @@ class CRM_Syncintacct_Util {
   }
 
   public static function createGLEntries($batchEntries) {
+    foreach ($batchEntries['ENTRIES'] as $key => &$entry) {
+      $batchEntries['ENTRIES'][$key] = $syncIntacctConfig->createGLEntry($entry);
+    }
+
     return CRM_Syncintacct_API::singleton()->createGLBatch($batchEntries);
   }
 
