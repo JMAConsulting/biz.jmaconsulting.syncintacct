@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <extension key="biz.jmaconsulting.syncintacct" type="module">
   <file>syncintacct</file>
-  <name>Sage Intacct Integration</name>
+  <name>Synchronize with Sage Intacct</name>
   <description>This extension integrates CiviCRM with Sage Intacct. Core CiviCRM financial entries for contributions,
     memberships and paid events are synchronized to Intacct's General Ledger. Grant Programs extension and Grant Programs 
     Multifund extension financial entries are synchronized to Intacct's Accounts Payable and Vendor functionality. In addition
