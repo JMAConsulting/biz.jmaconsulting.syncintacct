@@ -1,12 +1,15 @@
 <?xml version="1.0"?>
 <extension key="biz.jmaconsulting.syncintacct" type="module">
   <file>syncintacct</file>
-  <name>Sage Intacct Integration Extension</name>
-  <description>FIXME</description>
+  <name>Sage Intacct Integration</name>
+  <description>This extension integrates CiviCRM with Sage Intacct. Core CiviCRM financial entries for contributions,
+    memberships and paid events are synchronized to Intacct's General Ledger. Grant Programs extension and Grant Programs 
+    Multifund extension financial entries are synchronized to Intacct's Accounts Payable and Vendor functionality. In addition
+    to financial accounts, Intacct's Class, Deparment, Location and Project reporting is updated during the synchronization.</description>
   <license>AGPL-3.0</license>
   <maintainer>
-    <author>JMA Consulting</author>
-    <email>everyone@jmaconsulting.biz</email>
+    <author>Monish Deb, Joe Murray, JMA Consulting</author>
+    <email>support@jmaconsulting.biz</email>
   </maintainer>
   <urls>
     <url desc="Main Extension Page">https://github.com/JMAConsulting/biz.jmaconsulting.syncintacct</url>
@@ -16,11 +19,11 @@
   </urls>
   <releaseDate>2018-08-09</releaseDate>
   <version>1.0</version>
-  <develStage>alpha</develStage>
+  <develStage>beta</develStage>
   <compatibility>
     <ver>5.0</ver>
   </compatibility>
-  <comments>This is a new, undeveloped module</comments>
+  <comments>JMA Consulting would like to thank Megaphone Technology Consulting and the AGBU for their generous sponsorship of this extension.</comments>
   <civix>
     <namespace>CRM/Syncintacct</namespace>
   </civix>
