@@ -29,6 +29,7 @@ class CRM_Syncintacct_Util {
       fa_to.accounting_code AS to_account_code,
       fa_to.name AS to_account_name,
       fa_to.account_type_code AS to_account_type_code,
+      fa_to.id AS to_account_id,
       ft.total_amount AS debit_total_amount,
       ft.trxn_id AS trxn_id,
       cov.label AS payment_instrument,
@@ -49,9 +50,11 @@ class CRM_Syncintacct_Util {
       fa_from.account_type_code AS credit_account_type_code,
       fa_from.accounting_code AS credit_account,
       fa_from.name AS credit_account_name,
+      fa_from.id AS credit_account_id,
       fac.account_type_code AS from_credit_account_type_code,
       fac.accounting_code AS from_credit_account,
       fac.name AS from_credit_account_name,
+      fac.id AS from_credit_account_id,
       fi.description AS item_description,
       fi.id AS financial_item_id,
       eftc.entity_id AS entity_id
@@ -84,12 +87,10 @@ class CRM_Syncintacct_Util {
   }
 
 
-  public static function getAccountDataByCode($code) {
-    $result = CRM_Core_DAO::executeQuery("
-       SELECT ifad.* FROM civicrm_intacct_financial_account_data ifad
-       INNER JOIN civicrm_financial_account fa ON ifad.financial_account_id = fa.id AND fa.accounting_code = '$code' ")
-       ->fetchAll();
-    return CRM_Utils_Array::value(0, $result);
+  public static function getAccountDataByCode($id) {
+    return CRM_Utils_Array::value(0,
+      CRM_Core_DAO::executeQuery(" SELECT * FROM civicrm_intacct_financial_account_data WHERE financial_account_id = $id ")->fetchAll()
+    );
   }
 
   public static function formatGLBatchParams($dao, $batchID) {
@@ -101,12 +102,14 @@ class CRM_Syncintacct_Util {
       'ENTRIES' => [],
     ];
     $queryResults = [];
+    $bundlingEntries = [];
     while ($dao->fetch()) {
-      $accountCode = $dao->credit_account ?: $dao->from_credit_account;
       $accountName = $dao->credit_account ? $dao->credit_account_name : $dao->from_credit_account_name;
-      $values = self::getAccountDataByCode($accountCode);
+      $accountID = $dao->credit_account ? $dao->credit_account_id : $dao->from_credit_account_id;
+      $values = self::getAccountDataByCode($accountID);
       $GLBatch['ENTRIES'][] = [
-        'ACCOUNTNO' => $accountCode,
+        'ACCOUNTNO' => $dao->credit_account ?: $dao->from_credit_account,
+        'ACCOUNTID' => $accountID,
         'CURRENCY' => $dao->currency,
         'AMOUNT' => -$dao->debit_total_amount,
         'DESCRIPTION' => $dao->display_name . '-' . $accountName,
@@ -122,9 +125,10 @@ class CRM_Syncintacct_Util {
           'url' => CRM_Utils_System::url('civicrm/contact/view/contribution', "reset=1&id={$dao->entity_id}&cid={$dao->contact_id}&action=view", TRUE),
         ]
       ];
-      $values = self::getAccountDataByCode($dao->to_account_code);
+      $values = self::getAccountDataByCode($dao->to_account_id);
       $GLBatch['ENTRIES'][] = [
         'ACCOUNTNO' => $dao->to_account_code,
+        'ACCOUNTID' => $dao->to_account_id,
         'CURRENCY' => $dao->currency,
         'AMOUNT' => $dao->debit_total_amount,
         'DESCRIPTION' => $dao->display_name . '-' . $dao->to_account_name,
